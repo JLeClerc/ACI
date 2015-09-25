@@ -1,0 +1,17 @@
+
+host: 10.10.10.10
+user: admin
+password: password
+
+tenant: my_tenant
+name: my_cluster
+context_aware: single-Context
+device_type: PHYSICAL
+function_type: GoThrough
+cluster_username: admin
+cluster_password: cluster_password
+cluster_ip: 10.10.10.11
+cluster_port: 443
+device_package_vendor: Cisco
+device_package_model: FirePOWER
+device_package_version: 1.0
