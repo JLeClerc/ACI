@@ -1,25 +1,61 @@
 
-from cobra.model.vns import LDevVip
+from cobra.model.vns import LDevVip, RsMDevAtt, CCred, CCredSecret, CMgmt
 from createMo import *
+import getpass
+
+DEFAULT_CONTEXT_AWARENESS   = 'single-Context'
+DEFAULT_DEVICE_TYPE         = 'PHYSICAL'
+DEFAULT_FUNCTION_TYPE       = 'GoTo'
 
 def input_key_args():
     return input_raw_input('Device Cluster Name', required=True)
 
 def input_optional_args():
     args = {
-        'context_aware': input_options('Context Aware', default='single-Context', options=['single-Context', 'multi-Context']),
-        'device_type': input_options('Device Type', default='PHYSICAL', options=['PHYSICAL', 'VIRTUAL']),
-        'function_type': input_options('Function Type', default='GoTo', options=['GoTo','GoThrough']),
+        'contextAware': input_options('L4-L7 Device Cluster - Context Awareness', default=DEFAULT_CONTEXT_AWARENESS, options=['single-Context', 'multi-Context']),
+        'devtype': input_options('L4-L7 Device Cluster - Device Type', default=DEFAULT_DEVICE_TYPE, options=['PHYSICAL', 'VIRTUAL']),
+        'funcType': input_options('L4-L7 Device Cluster - Function Type', default=DEFAULT_FUNCTION_TYPE, options=['GoTo','GoThrough']),
+        # 'device_package_vendor': input_options('L4-L7 Device Package Info: Vendor Name'),
+        # 'device_package_model': input_options('L4-L7 Device Package Info: Model Name'),
+        # 'device_package_version': input_options('L4-L7 Device Package Info: Major Version'),
+        # 'cluster_username': input_options('L4-L7 Device Cluster: Username'),
+        # 'cluster_password': getpass.getpass('L4-L7 Device Cluster: Password: '),
+        # 'cluster_ip': input_options('L4-L7 Device Cluster: IP'),
+        # 'cluster_port': input_options('L4-L7 Device Cluster: Port'),
     }
     return args
 
 def create_l4l7_cluster(fv_tenant, name, **args):
     """Create L4L7 Cluster"""
     args = args['optional_args'] if 'optional_args' in args.keys() else args
-    return LDevVip(fv_tenant, name, 
-        contextAware=args['context_aware'],
-        devtype=args['device_type'],
-        funcType=args['function_type'])
+    valid_keys = ['contextAware', 'devtype', 'funcType']
+    kwargs = {k: v for k, v in args.items() if (k in valid_keys and v)}
+    return LDevVip(fv_tenant, name, **kwargs)
+
+def add_metadata_source_relation(cluster_mo, **args):
+    """vnsRsMDevAtt: "A source relation to the metadata definitions for a service device type. Functions as a pointer to the device package."""
+    args = args['optional_args'] if 'optional_args' in args.keys() else args
+    tdn = 'uni/infra/mDev-{device_package_vendor}-{device_package_model}-{device_package_version}'.format(**args)
+    return RsMDevAtt(cluster_mo, tDn=tdn)
+
+def add_concrete_device_access_credentials(cluster_mo, **args):
+    """The concrete device access credentials in the L4-L7 device cluster. The concrete device access credentials normally include a password that is not displayed and is stored in encrypted form."""
+    args = args['optional_args'] if 'optional_args' in args.keys() else args
+    return CCred(cluster_mo, name='username', value=args['cluster_username'])
+
+def add_concrete_device_access_credentials_secret(cluster_mo, **args):
+    """The secret for the concrete device access credentials in the L4-L7 device cluster. The concrete device access credentials normally include a password that is not displayed and is stored in encrypted form."""
+    args = args['optional_args'] if 'optional_args' in args.keys() else args
+    return CCredSecret(cluster_mo, name='password', value=args['cluster_password'])
+
+def add_management_interface(cluster_mo, **args):
+    """The management interface is used to manage a concrete device in the L4-L7 device cluster. The management interface is identified by a host address and port number."""
+    args = args['optional_args'] if 'optional_args' in args.keys() else args
+    valid_keys = ['cluster_ip', 'cluster_port']
+    key_map = {'cluster_ip': 'host', 'cluster_port': 'port'}
+    kwargs = {k: v for k, v in args.items() if (k in valid_keys and v)}
+    kwargs = {key_map[k]: v for k, v in kwargs.items()}
+    return CMgmt(cluster_mo, name='devMgmt', **kwargs)
 
 class CreateL4L7Cluster(CreateMo):
     def __init__(self):
@@ -31,10 +67,17 @@ class CreateL4L7Cluster(CreateMo):
     def set_cli_mode(self):
         super(CreateL4L7Cluster, self).set_cli_mode()
         self.parser_cli.add_argument('name', help='Cluster Name')
-        self.parser_cli.add_argument('-c', '--context_aware', default='single-Context', choices=['single-Context', 'multi-Context'], 
+        self.parser_cli.add_argument('-d1', '--device_package_vendor', help='Device package: <vendor>-<model>-<version>. E.g "Cisco-FirePOWER-1.0"')
+        self.parser_cli.add_argument('-d2', '--device_package_model', help='Device package: <vendor>-<model>-<version>. E.g "Cisco-FirePOWER-1.0"')
+        self.parser_cli.add_argument('-d3', '--device_package_version', help='Device package: <vendor>-<model>-<version>. E.g "Cisco-FirePOWER-1.0"')
+        self.parser_cli.add_argument('-f', '--function_type', choices=['GoTo','GoThrough'], dest='funcType', help='A GoTo device has a specific destination, depending on the package. A GoThrough device is a transparent device.')
+        self.parser_cli.add_argument('-t', '--device_type', choices=['PHYSICAL', 'VIRTUAL'], dest='devtype', help='Specifies whether the device cluster has PHYSICAL appliances or VIRTUAL appliances.')
+        self.parser_cli.add_argument('-u1', '--username', dest='cluster_username', help='Username for the L4-L7 cluster.')
+        self.parser_cli.add_argument('-u2', '--password', dest='cluster_password', help='Password for the L4-L7 cluster.')
+        self.parser_cli.add_argument('-i', '--ip', dest='cluster_ip', help='IP Address of the L4-L7 cluster host.')
+        self.parser_cli.add_argument('-j', '--port', dest='cluster_port', help='Port of the L4-L7 cluster host.')
+        self.parser_cli.add_argument('-x', '--context_aware', choices=['single-Context', 'multi-Context'], dest='contextAware', 
             help='The context-awareness of the Device Cluster. Single means that the device cluster cannot be shared across multiple tenants of a given type that are hosted on the provider network. Multiple means that the device cluster can be shared across multiple tenants of a given type that you are hosting on this provider network. ')
-        self.parser_cli.add_argument('-d', '--device_type', default='PHYSICAL', choices=['PHYSICAL', 'VIRTUAL'], help='Specifies whether the device cluster has PHYSICAL appliances or VIRTUAL appliances.')
-        self.parser_cli.add_argument('-f', '--function_type', default='GoThrough', choices=['GoTo','GoThrough'], help='A GoTo device has a specific destination, depending on the package. A GoThrough device is a transparent device.')
 
     def read_key_args(self):
         self.tenant = self.args.pop('tenant')
@@ -52,6 +95,14 @@ class CreateL4L7Cluster(CreateMo):
     def main_function(self):
         fv_tenant = self.check_if_tenant_exist()
         vns_ldevvip = create_l4l7_cluster(fv_tenant, self.name, optional_args=self.optional_args)
+        if 'device_package_vendor' in self.optional_args:
+            vns_rsmdevatt = add_metadata_source_relation(vns_ldevvip, optional_args=self.optional_args)
+        if 'cluster_username' in self.optional_args:
+            vns_ccred = add_concrete_device_access_credentials(vns_ldevvip, optional_args=self.optional_args)
+        if 'cluster_password' in self.optional_args:
+            vns_ccredsecret = add_concrete_device_access_credentials_secret(vns_ldevvip, optional_args=self.optional_args)
+        if 'cluster_ip' in self.optional_args or 'port' in self.optional_args:
+            vns_cmgmt = add_management_interface(vns_ldevvip, optional_args=self.optional_args)
 
 if __name__ == '__main__':
     mo = CreateL4L7Cluster()
