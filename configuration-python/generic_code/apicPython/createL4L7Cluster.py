@@ -15,13 +15,6 @@ def input_optional_args():
         'contextAware': input_options('L4-L7 Device Cluster - Context Awareness', default=DEFAULT_CONTEXT_AWARENESS, options=['single-Context', 'multi-Context']),
         'devtype': input_options('L4-L7 Device Cluster - Device Type', default=DEFAULT_DEVICE_TYPE, options=['PHYSICAL', 'VIRTUAL']),
         'funcType': input_options('L4-L7 Device Cluster - Function Type', default=DEFAULT_FUNCTION_TYPE, options=['GoTo','GoThrough']),
-        # 'device_package_vendor': input_options('L4-L7 Device Package Info: Vendor Name'),
-        # 'device_package_model': input_options('L4-L7 Device Package Info: Model Name'),
-        # 'device_package_version': input_options('L4-L7 Device Package Info: Major Version'),
-        # 'cluster_username': input_options('L4-L7 Device Cluster: Username'),
-        # 'cluster_password': getpass.getpass('L4-L7 Device Cluster: Password: '),
-        # 'cluster_ip': input_options('L4-L7 Device Cluster: IP'),
-        # 'cluster_port': input_options('L4-L7 Device Cluster: Port'),
     }
     return args
 
@@ -33,9 +26,11 @@ def create_l4l7_cluster(fv_tenant, name, **args):
     return LDevVip(fv_tenant, name, **kwargs)
 
 def add_metadata_source_relation(cluster_mo, **args):
-    """vnsRsMDevAtt: "A source relation to the metadata definitions for a service device type. Functions as a pointer to the device package."""
+    """vnsRsMDevAtt: "A source relation to the metadata definitions for a service device type. Functions as a pointer to the device package.
+        e.g: uni/infra/mDev-{device_package_vendor}-{device_package_model}-{device_package_version}
+    """
     args = args['optional_args'] if 'optional_args' in args.keys() else args
-    tdn = 'uni/infra/mDev-{device_package_vendor}-{device_package_model}-{device_package_version}'.format(**args)
+    tdn = 'uni/infra/mDev-{device_package}'.format(**args)
     return RsMDevAtt(cluster_mo, tDn=tdn)
 
 def add_concrete_device_access_credentials(cluster_mo, **args):
@@ -67,15 +62,13 @@ class CreateL4L7Cluster(CreateMo):
     def set_cli_mode(self):
         super(CreateL4L7Cluster, self).set_cli_mode()
         self.parser_cli.add_argument('name', help='Cluster Name')
-        self.parser_cli.add_argument('-d1', '--device_package_vendor', help='Device package: <vendor>-<model>-<version>. E.g "Cisco-FirePOWER-1.0"')
-        self.parser_cli.add_argument('-d2', '--device_package_model', help='Device package: <vendor>-<model>-<version>. E.g "Cisco-FirePOWER-1.0"')
-        self.parser_cli.add_argument('-d3', '--device_package_version', help='Device package: <vendor>-<model>-<version>. E.g "Cisco-FirePOWER-1.0"')
+        self.parser_cli.add_argument('-d', '--device_package', help='Device package, e.g "Cisco-FirePOWER-1.0"', metavar='VENDOR-MODEL-VERSION')
         self.parser_cli.add_argument('-f', '--function_type', choices=['GoTo','GoThrough'], dest='funcType', help='A GoTo device has a specific destination, depending on the package. A GoThrough device is a transparent device.')
         self.parser_cli.add_argument('-t', '--device_type', choices=['PHYSICAL', 'VIRTUAL'], dest='devtype', help='Specifies whether the device cluster has PHYSICAL appliances or VIRTUAL appliances.')
         self.parser_cli.add_argument('-u1', '--username', dest='cluster_username', help='Username for the L4-L7 cluster.')
         self.parser_cli.add_argument('-u2', '--password', dest='cluster_password', help='Password for the L4-L7 cluster.')
         self.parser_cli.add_argument('-i', '--ip', dest='cluster_ip', help='IP Address of the L4-L7 cluster host.')
-        self.parser_cli.add_argument('-j', '--port', dest='cluster_port', help='Port of the L4-L7 cluster host.')
+        self.parser_cli.add_argument('-p', '--port', dest='cluster_port', help='Port of the L4-L7 cluster host.')
         self.parser_cli.add_argument('-x', '--context_aware', choices=['single-Context', 'multi-Context'], dest='contextAware', 
             help='The context-awareness of the Device Cluster. Single means that the device cluster cannot be shared across multiple tenants of a given type that are hosted on the provider network. Multiple means that the device cluster can be shared across multiple tenants of a given type that you are hosting on this provider network. ')
 
@@ -95,7 +88,7 @@ class CreateL4L7Cluster(CreateMo):
     def main_function(self):
         fv_tenant = self.check_if_tenant_exist()
         vns_ldevvip = create_l4l7_cluster(fv_tenant, self.name, optional_args=self.optional_args)
-        if 'device_package_vendor' in self.optional_args:
+        if 'device_package' in self.optional_args:
             vns_rsmdevatt = add_metadata_source_relation(vns_ldevvip, optional_args=self.optional_args)
         if 'cluster_username' in self.optional_args:
             vns_ccred = add_concrete_device_access_credentials(vns_ldevvip, optional_args=self.optional_args)
