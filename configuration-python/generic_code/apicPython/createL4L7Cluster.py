@@ -2,6 +2,7 @@
 from cobra.model.vns import LDevVip, RsMDevAtt, CCred, CCredSecret, CMgmt
 from createMo import *
 import getpass
+import sys
 
 DEFAULT_CONTEXT_AWARENESS   = 'single-Context'
 DEFAULT_DEVICE_TYPE         = 'PHYSICAL'
@@ -23,7 +24,17 @@ def create_l4l7_cluster(fv_tenant, name, **args):
     args = args['optional_args'] if 'optional_args' in args.keys() else args
     valid_keys = ['contextAware', 'devtype', 'funcType']
     kwargs = {k: v for k, v in args.items() if (k in valid_keys and v)}
-    return LDevVip(fv_tenant, name, **kwargs)
+
+    vns_ldevvip = LDevVip(fv_tenant, name, **kwargs)
+    if 'device_package' in args:
+        vns_rsmdevatt = add_metadata_source_relation(vns_ldevvip, optional_args=args)
+    if 'cluster_username' in args:
+        vns_ccred = add_concrete_device_access_credentials(vns_ldevvip, optional_args=args)
+    if 'cluster_password' in args:
+        vns_ccredsecret = add_concrete_device_access_credentials_secret(vns_ldevvip, optional_args=args)
+    if 'cluster_ip' in args or 'cluster_port' in args:
+        vns_cmgmt = add_management_interface(vns_ldevvip, optional_args=args)
+    return vns_ldevvip
 
 def add_metadata_source_relation(cluster_mo, **args):
     """vnsRsMDevAtt: "A source relation to the metadata definitions for a service device type. Functions as a pointer to the device package.
@@ -51,6 +62,11 @@ def add_management_interface(cluster_mo, **args):
     kwargs = {k: v for k, v in args.items() if (k in valid_keys and v)}
     kwargs = {key_map[k]: v for k, v in kwargs.items()}
     return CMgmt(cluster_mo, name='devMgmt', **kwargs)
+
+def add_concrete_device(cluster_mo, **args):
+    """ Calls L4L7Device.py to create CDev child MO's """
+    return createL4L7Device.create_l4l7_device(cluster_mo, **args)
+
 
 class CreateL4L7Cluster(CreateMo):
     def __init__(self):
@@ -88,14 +104,6 @@ class CreateL4L7Cluster(CreateMo):
     def main_function(self):
         fv_tenant = self.check_if_tenant_exist()
         vns_ldevvip = create_l4l7_cluster(fv_tenant, self.name, optional_args=self.optional_args)
-        if 'device_package' in self.optional_args:
-            vns_rsmdevatt = add_metadata_source_relation(vns_ldevvip, optional_args=self.optional_args)
-        if 'cluster_username' in self.optional_args:
-            vns_ccred = add_concrete_device_access_credentials(vns_ldevvip, optional_args=self.optional_args)
-        if 'cluster_password' in self.optional_args:
-            vns_ccredsecret = add_concrete_device_access_credentials_secret(vns_ldevvip, optional_args=self.optional_args)
-        if 'cluster_ip' in self.optional_args or 'port' in self.optional_args:
-            vns_cmgmt = add_management_interface(vns_ldevvip, optional_args=self.optional_args)
 
 if __name__ == '__main__':
     mo = CreateL4L7Cluster()

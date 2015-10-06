@@ -1,5 +1,5 @@
 
-from cobra.model.vns import CDev, LDevVip
+from cobra.model.vns import CDev, LDevVip, CCred, CCredSecret, CMgmt
 from createMo import *
 
 def input_key_args():
@@ -12,13 +12,42 @@ def input_optional_args():
 
 def create_l4l7_device(parent_mo, name, **args):
     """Create L4L7 Device"""
-    return CDev(parent_mo, name)
+    args = args['optional_args'] if 'optional_args' in args.keys() else args
+    valid_keys = ['name', 'vmName', 'vcenterName', 'devCtxLbl']
+    kwargs = {k: v for k, v in args.items() if (k in valid_keys and v)}
+    vns_cdev = CDev(parent_mo, name, **kwargs)
+    if 'device_username' in args:
+        vns_ccred = add_concrete_device_access_credentials(vns_cdev, optional_args=args)
+    if 'device_password' in args:
+        vns_ccredsecret = add_concrete_device_access_credentials_secret(vns_cdev, optional_args=args)
+    if 'device_ip' in args or 'device_port' in args:
+        vns_cmgmt = add_management_interface(vns_cdev, optional_args=args)
+    return vns_cdev
+
+def add_concrete_device_access_credentials(device_mo, **args):
+    """The concrete device access credentials in the L4-L7 device cluster. The concrete device access credentials normally include a password that is not displayed and is stored in encrypted form."""
+    args = args['optional_args'] if 'optional_args' in args.keys() else args
+    return CCred(device_mo, name='username', value=args['device_username'])
+
+def add_concrete_device_access_credentials_secret(device_mo, **args):
+    """The secret for the concrete device access credentials in the L4-L7 device cluster. The concrete device access credentials normally include a password that is not displayed and is stored in encrypted form."""
+    args = args['optional_args'] if 'optional_args' in args.keys() else args
+    return CCredSecret(device_mo, name='password', value=args['device_password'])
+
+def add_management_interface(device_mo, **args):
+    """The management interface is used to manage a concrete device in the L4-L7 device cluster. The management interface is identified by a host address and port number."""
+    args = args['optional_args'] if 'optional_args' in args.keys() else args
+    valid_keys = ['device_ip', 'device_port']
+    key_map = {'device_ip': 'host', 'device_port': 'port'}
+    kwargs = {k: v for k, v in args.items() if (k in valid_keys and v)}
+    kwargs = {key_map[k]: v for k, v in kwargs.items()}
+    return CMgmt(device_mo, name='devMgmt', **kwargs)
 
 class CreateL4L7Device(CreateMo):
     def __init__(self):
-        self.description = 'Create an L4-L7 concrete device'
-        self.tenant_required = True
-        self.contract = None
+        self.description        = 'Create an L4-L7 concrete device'
+        self.tenant_required    = True
+        self.contract           = None
         super(CreateL4L7Device, self).__init__()
 
     def set_cli_mode(self):

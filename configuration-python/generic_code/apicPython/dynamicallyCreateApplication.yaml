@@ -207,7 +207,7 @@ epgs:
       encap: vlan-13
       deployment_immediacy: lazy
       mode: untagged
-      
+
 # Specify the relationship (provided or consumed) between contract and epg.
 # Usage:
 # - contract: <contractName>
@@ -229,3 +229,31 @@ applied_contracts:
 - contract: DB_Con
   epg: App_EPG
   type: consumed
+
+l4l7_devices:
+- #tenant: sf_test
+  name: my_cluster
+  context_aware: single-Context
+  device_type: PHYSICAL
+  function_type: GoThrough
+  cluster_username: admin
+  cluster_password: cluster_password
+  cluster_ip: 10.10.10.11
+  cluster_port: 443
+  device_package: Cisco-FirePOWER-1.0
+  devices:
+  - name: yaml_device
+    device_username: admin
+    device_password: device_password_1
+    device_ip: 10.10.10.2
+    device_port: 443
+    concrete_interfaces:
+    - name: test_interface
+      vnicName: ""
+      path: "topology/pod-1/paths-1001/pathep-[eth1/10]"
+
+  - name: yaml_device_2
+    device_username: admin
+    device_password: device_password_2
+    device_ip: 10.10.10.3
+    device_port: 443

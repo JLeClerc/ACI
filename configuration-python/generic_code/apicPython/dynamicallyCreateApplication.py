@@ -10,6 +10,9 @@ from apicPython import createContract
 from apicPython import createApplication
 from apicPython import createApplicationEpg
 from apicPython import connectEpgContract
+from apicPython import createL4L7Cluster
+from apicPython import createL4L7Device
+from apicPython import createL4L7ConcreteInterface
 
 
 class DynamicallyCreateApplication(LabScript):
@@ -25,6 +28,7 @@ class DynamicallyCreateApplication(LabScript):
         self.application_optional_args = None
         self.epgs = []
         self.applied_contracts = []
+        self.l4l7_devices = []
         super(DynamicallyCreateApplication, self).__init__()
 
     def run_yaml_mode(self):
@@ -38,6 +42,7 @@ class DynamicallyCreateApplication(LabScript):
         self.application_optional_args = self.args['application']['optional_args']
         self.epgs = self.args['epgs']
         self.applied_contracts = self.args['applied_contracts']
+        self.l4l7_devices = self.args['l4l7_devices']
 
     def run_wizard_mode(self):
         print 'Wizard mode is not supported in this method. Please try Yaml mode.'
@@ -93,6 +98,22 @@ class DynamicallyCreateApplication(LabScript):
             fv_aepg = self.check_if_mo_exist('uni/tn-' + self.tenant + '/ap-' + self.application + '/epg-', contract['epg'], AEPg, description='Application EPG')
             connectEpgContract.connect_epg_contract(fv_aepg, contract['contract'], contract['type'])
             self.commit_change(changed_object=fv_aepg)
+
+        # add L4L7 clusters/devices
+        for cluster in self.l4l7_devices:
+            # add cluster
+            vns_ldevvip = createL4L7Cluster.create_l4l7_cluster(fv_tenant, **cluster)
+            # add devices to cluster
+            if is_valid_key(cluster, 'devices'):
+                for device in cluster['devices']:
+                    vns_cdev = createL4L7Device.create_l4l7_device(vns_ldevvip, **device)
+                    #self.commit_change(changed_object=vns_cdev)
+                    # add concrete interfaces to devices
+                    if is_valid_key(device, 'concrete_interfaces'):
+                        for interface in device['concrete_interfaces']:
+                            vns_cif = createL4L7ConcreteInterface.create_l4l7_concrete_interface(vns_cdev, **interface)
+                            #self.commit_change(changed_object=vns_cif)
+            self.commit_change(changed_object=vns_ldevvip)
 
 if __name__ == '__main__':
     mo = DynamicallyCreateApplication()
