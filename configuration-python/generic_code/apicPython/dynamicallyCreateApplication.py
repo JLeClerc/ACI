@@ -13,6 +13,7 @@ from apicPython import connectEpgContract
 from apicPython import createL4L7Cluster
 from apicPython import createL4L7Device
 from apicPython import createL4L7ConcreteInterface
+from apicPython import createL4L7LogicalInterface
 
 
 class DynamicallyCreateApplication(LabScript):
@@ -101,19 +102,38 @@ class DynamicallyCreateApplication(LabScript):
 
         # add L4L7 clusters/devices
         for cluster in self.l4l7_devices:
+
             # add cluster
             vns_ldevvip = createL4L7Cluster.create_l4l7_cluster(fv_tenant, **cluster)
+            self.commit_change(changed_object=vns_ldevvip)
+
             # add devices to cluster
             if is_valid_key(cluster, 'devices'):
                 for device in cluster['devices']:
                     vns_cdev = createL4L7Device.create_l4l7_device(vns_ldevvip, **device)
-                    #self.commit_change(changed_object=vns_cdev)
+                    self.commit_change(changed_object=vns_cdev)
+
                     # add concrete interfaces to devices
                     if is_valid_key(device, 'concrete_interfaces'):
                         for interface in device['concrete_interfaces']:
                             vns_cif = createL4L7ConcreteInterface.create_l4l7_concrete_interface(vns_cdev, **interface)
-                            #self.commit_change(changed_object=vns_cif)
-            self.commit_change(changed_object=vns_ldevvip)
+                            self.commit_change(changed_object=vns_cif)
 
+            # add logical interfaces to cluster
+            if is_valid_key(cluster, 'logical_interfaces'):
+                for logical_interface in cluster['logical_interfaces']:
+                    vns_lif = createL4L7LogicalInterface.create_l4l7_logical_interface(vns_ldevvip, logical_interface['name'], device=logical_interface['device'], label=logical_interface['label'], tenant=self.tenant, cluster=cluster['name'], cifname=logical_interface['concrete_interface']) 
+                    self.commit_change(changed_object=vns_lif)
+'''
+def create_l4l7_logical_interface(parent_mo, name, **args):
+    """The logical interface is associated with a set of concrete interfaces from the L4-L7 device cluster. This is used to define the connection between a service graph and device interfaces."""
+    args = args['optional_args'] if 'optional_args' in args.keys() else args
+    valid_keys = ['name', 'encap']
+
+    ...
+
+        vns_rsmetaif = add_source_relation_to_interface_label(vns_lif, device_package= , label= ])
+    if 'concrete_interface':
+        vns_rscifatt = add_association_to_concrete_interface(vns_lif, tenant= , cluster= , device = , interface= )'''
 if __name__ == '__main__':
     mo = DynamicallyCreateApplication()

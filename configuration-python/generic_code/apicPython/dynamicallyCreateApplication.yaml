@@ -231,8 +231,7 @@ applied_contracts:
   type: consumed
 
 l4l7_devices:
-- #tenant: sf_test
-  name: my_cluster
+- name: my_cluster
   context_aware: single-Context
   device_type: PHYSICAL
   function_type: GoThrough
@@ -241,19 +240,47 @@ l4l7_devices:
   cluster_ip: 10.10.10.11
   cluster_port: 443
   device_package: Cisco-FirePOWER-1.0
+
   devices:
-  - name: yaml_device
+  - name: my_device
     device_username: admin
     device_password: device_password_1
     device_ip: 10.10.10.2
     device_port: 443
     concrete_interfaces:
-    - name: test_interface
+    - name: internalcinf
       vnicName: ""
-      path: "topology/pod-1/paths-1001/pathep-[eth1/10]"
-
-  - name: yaml_device_2
+      path: "topology/pod-1/paths-1001/pathep-[eth1/11]"
+    - name: externalcinf
+      vnicName: ""
+      path: "topology/pod-1/paths-1001/pathep-[eth1/12]"
+  - name: my_device_2
     device_username: admin
     device_password: device_password_2
     device_ip: 10.10.10.3
     device_port: 443
+    concrete_interfaces:
+    - name: internalcinf
+      vnicName: ""
+      path: "topology/pod-1/paths-1001/pathep-[eth1/11]"
+    - name: externalcinf
+      vnicName: ""
+      path: "topology/pod-1/paths-1001/pathep-[eth1/12]"
+
+  logical_interfaces:
+  - name: internal
+    label: internal
+    device: my_device
+    concrete_interface: internalcinf
+  - name: internal
+    label: internal
+    device: my_device_2
+    concrete_interface: internalcinf
+  - name: external
+    label: external
+    device: my_device
+    concrete_interface: externalcinf
+  - name: external
+    label: external
+    device: my_device_2
+    concrete_interface: externalcinf
