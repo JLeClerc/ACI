@@ -230,6 +230,44 @@ applied_contracts:
   epg: App_EPG
   type: consumed
 
+# Specify L4-L7 device clusters in this tenant.
+# Usage:
+# - name: <deviceClusterName> 
+#   context_aware: [single-Context | multi-Context]
+#   device_type: [PHYSICAL | VIRTUAL]
+#   function_type: [GoTo | GoThrough]
+#   cluster_username: <username>
+#   cluster_password: <password>
+#   cluster_ip: <clusterIP>
+#   cluster_port: <clusterPort>
+#   device_package: <vendor>-<model>-<version>
+#   vmm_provider: VMware                    # for virtual devices
+#   vmm_domain: my_firepower_domain         # for virtual devices
+#   
+#   devices:
+#   - name: <concreteDeviceName>
+#     vmName: <vmName>                      # for virtual devices
+#     vcenterName: <vcenterName>            # for virtual devices
+#     vmm_provider: <vmmProvider>           # for virtual devices
+#     vmm_domain: <vmmDomain>               # for virtual devices
+#     vmm_controller: <vmmController        # for virtual devices
+#     device_username: <deviceUsername>
+#     device_ip: <deviceIP>
+#     device_port: <devicePort>
+#
+#     concrete_interfaces:
+#     - name: <concreteInterfaceName>
+#       vnicName: <vnicName>                # for virtual devices
+#       path: <path>                        # path to the physical port/PC/vPC
+#   
+#   logical_interfaces:
+#   - name: <logicalInterfaceName>
+#     label: <metaInterfaceLabel>           # Varies between device packages. See the device package device specification file for valid labels.
+#     device: <concreteDeviceName>
+#     concrete_interface: <concreteInterfaceName>
+#
+# All args other than "name" are optional unless required by APIC.
+
 l4l7_devices:
 - name: my_cluster
   context_aware: single-Context
@@ -240,9 +278,16 @@ l4l7_devices:
   cluster_ip: 10.10.10.11
   cluster_port: 443
   device_package: Cisco-FirePOWER-1.0
+  #vmm_provider: VMware
+  #vmm_domain: my_firepower_domain
 
   devices:
   - name: my_device
+    #vmName: Virtual3D64_a
+    #vcenterName: my_vCenter
+    #vmm_provider: VMware
+    #vmm_domain: my_vmm_domain
+    #vmm_controller: my_vCenter
     device_username: admin
     device_password: device_password_1
     device_ip: 10.10.10.2
@@ -255,6 +300,11 @@ l4l7_devices:
       vnicName: ""
       path: "topology/pod-1/paths-1001/pathep-[eth1/12]"
   - name: my_device_2
+    #vmName: Virtual3D64_b
+    #vcenterName: my_vCenter
+    #vmm_provider: VMware
+    #vmm_domain: my_vmm_domain
+    #vmm_controller: my_vCenter
     device_username: admin
     device_password: device_password_2
     device_ip: 10.10.10.3
