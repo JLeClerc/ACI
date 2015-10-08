@@ -16,7 +16,7 @@ def create_l4l7_logical_interface(parent_mo, name, **args):
     valid_keys = ['name', 'encap']
     kwargs = {k: v for k, v in args.items() if (k in valid_keys and v)}
     vns_lif = LIf(parent_mo, name, **kwargs)
-    if 'interface_label' in args:
+    if 'label' in args:
         vns_rsmetaif = add_source_relation_to_interface_label(vns_lif, device_package=args['device_package'], label= args['label'])
     if 'concrete_interface':
         vns_rscifatt = add_association_to_concrete_interface(vns_lif, tenant=args['tenant'], cluster=args['cluster'], device=args['device'], cifname=args['cifname'])
