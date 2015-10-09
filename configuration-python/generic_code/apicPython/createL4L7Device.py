@@ -1,5 +1,5 @@
 
-from cobra.model.vns import CDev, LDevVip, CCred, CCredSecret, CMgmt
+from cobra.model.vns import CDev, LDevVip, CCred, CCredSecret, CMgmt, RsCDevToCtrlrP
 from createMo import *
 
 def input_key_args():
@@ -22,6 +22,8 @@ def create_l4l7_device(parent_mo, name, **args):
         vns_ccredsecret = add_concrete_device_access_credentials_secret(vns_cdev, optional_args=args)
     if 'device_ip' in args or 'device_port' in args:
         vns_cmgmt = add_management_interface(vns_cdev, optional_args=args)
+    if 'vmm_provider' in args and 'vmm_domain' in args and 'vmm_controller' in args:
+        vns_rscdevtoctrlrp = add_source_relation_to_vmm_domain_controller_profile(vns_cdev, optional_args=args)
     return vns_cdev
 
 def add_concrete_device_access_credentials(device_mo, **args):
@@ -42,6 +44,12 @@ def add_management_interface(device_mo, **args):
     kwargs = {k: v for k, v in args.items() if (k in valid_keys and v)}
     kwargs = {key_map[k]: v for k, v in kwargs.items()}
     return CMgmt(device_mo, name='devMgmt', **kwargs)
+
+def add_source_relation_to_vmm_domain_controller_profile(device_mo, **args):
+    """Source relation to the vmm domain controller profile for validation."""
+    args = args['optional_args'] if 'optional_args' in args.keys() else args
+    valid_keys = ['vmm_provider','vmm_domain','vmm_controller']
+    return RsCDevToCtrlrP(device_mo, tDn='uni/vmmp-{vmm_provider}/dom-{vmm_domain}/ctrlr-{vmm_controller}')
 
 class CreateL4L7Device(CreateMo):
     def __init__(self):
