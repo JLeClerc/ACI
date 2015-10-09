@@ -110,7 +110,10 @@ class DynamicallyCreateApplication(LabScript):
             # add devices to cluster
             if is_valid_key(cluster, 'devices'):
                 for device in cluster['devices']:
-                    vns_cdev = createL4L7Device.create_l4l7_device(vns_ldevvip, **device)
+                    if 'vmm provider' in cluster and 'vmm_domain' in cluster:
+                        vns_cdev = createL4L7Device.create_l4l7_device(vns_ldevvip, vmm_provider=cluster['vmm_provider'], vmm_domain=cluster['vmm_domain'] **device)
+                    else:
+                        vns_cdev = createL4L7Device.create_l4l7_device(vns_ldevvip, **device)
                     self.commit_change(changed_object=vns_cdev)
 
                     # add concrete interfaces to devices
@@ -124,16 +127,6 @@ class DynamicallyCreateApplication(LabScript):
                 for logical_interface in cluster['logical_interfaces']:
                     vns_lif = createL4L7LogicalInterface.create_l4l7_logical_interface(vns_ldevvip, logical_interface['name'], device=logical_interface['device'], label=logical_interface['label'], tenant=self.tenant, cluster=cluster['name'], cifname=logical_interface['concrete_interface']) 
                     self.commit_change(changed_object=vns_lif)
-'''
-def create_l4l7_logical_interface(parent_mo, name, **args):
-    """The logical interface is associated with a set of concrete interfaces from the L4-L7 device cluster. This is used to define the connection between a service graph and device interfaces."""
-    args = args['optional_args'] if 'optional_args' in args.keys() else args
-    valid_keys = ['name', 'encap']
 
-    ...
-
-        vns_rsmetaif = add_source_relation_to_interface_label(vns_lif, device_package= , label= ])
-    if 'concrete_interface':
-        vns_rscifatt = add_association_to_concrete_interface(vns_lif, tenant= , cluster= , device = , interface= )'''
 if __name__ == '__main__':
     mo = DynamicallyCreateApplication()
