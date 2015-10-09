@@ -1,5 +1,5 @@
 
-from cobra.model.vns import CDev, LDevVip, CCred, CCredSecret, CMgmt, RsCDevToCtrlrP
+from cobra.model.vns import CDev, LDevVip, CCred, CCredSecret, CMgmt, RsCDevToCtrlrP, DevFolder, DevParam
 from createMo import *
 
 def input_key_args():
@@ -24,6 +24,8 @@ def create_l4l7_device(parent_mo, name, **args):
         vns_cmgmt = add_management_interface(vns_cdev, optional_args=args)
     if 'vmm_provider' in args and 'vmm_domain' in args and 'vmm_controller' in args:
         vns_rscdevtoctrlrp = add_source_relation_to_vmm_domain_controller_profile(vns_cdev, optional_args=args)
+    if 'device_folders' in args:
+        add_l4l7_device_folders(vns_cdev, args['device_folders'])
     return vns_cdev
 
 def add_concrete_device_access_credentials(device_mo, **args):
@@ -50,6 +52,37 @@ def add_source_relation_to_vmm_domain_controller_profile(device_mo, **args):
     args = args['optional_args'] if 'optional_args' in args.keys() else args
     valid_keys = ['vmm_provider','vmm_domain','vmm_controller']
     return RsCDevToCtrlrP(device_mo, tDn='uni/vmmp-{vmm_provider}/dom-{vmm_domain}/ctrlr-{vmm_controller}')
+
+def add_l4l7_device_folders(parent_mo, folder_list):
+    for folder in folder_list:
+        add_l4l7_device_folder(parent_mo, **folder)
+
+def add_l4l7_device_folder(parent_mo, **args):
+    """Recursively add device folders and parameters to parent mo.
+
+    @param parent_mo: The parent MO of the top level folder is the CDev, but the parent MO of a subfolder is its parent folder.
+    """
+    args = args['optional_args'] if 'optional_args' in args.keys() else args
+    folder_required_keys = ['name', 'key']
+    param_required_keys = ['name', 'key', 'value']
+
+    # parse folders
+    if all(k in args.keys() for k in folder_required_keys):
+        vns_devfolder = DevFolder(parent_mo, **{k: v for k,v in args.items() if k in folder_required_keys and v})
+
+        # parse params
+        if 'device_params' in args.keys(): # This folder contains device params
+            for param in args['device_params']:
+                if all(k in param.keys() for k in param_required_keys):
+                    DevParam(vns_devfolder, **param)
+
+        # parse subfolders
+        if 'device_folders' in args.keys():
+            for folder in args['device_folders']:
+                add_dev_folders_params(vns_devfolder, **folder)
+        return vns_devfolder
+    else:
+        raise Exception('Invalid L4-L7 device folder configuration. Missing required keys "{0}": {1}'.format(folder_required_keys, repr(args)))
 
 class CreateL4L7Device(CreateMo):
     def __init__(self):

@@ -1,5 +1,5 @@
 
-from cobra.model.vns import LDevVip, RsMDevAtt, CCred, CCredSecret, CMgmt, RsALDevToDomP
+from cobra.model.vns import LDevVip, RsMDevAtt, CCred, CCredSecret, CMgmt, RsALDevToDomP, DevFolder, DevParam
 from createMo import *
 import getpass
 import sys
@@ -36,6 +36,8 @@ def create_l4l7_cluster(fv_tenant, name, **args):
         vns_cmgmt = add_management_interface(vns_ldevvip, optional_args=args)
     if 'vmm_provider' in args and 'vmm_domain' in args:
         vns_rsaldevtodomp = add_source_relation_to_vmm_domain_profile(vns_ldevvip, optional_args=args)
+    if 'device_folders' in args:
+        add_l4l7_device_folders(vns_ldevvip, args['device_folders'])
     return vns_ldevvip
 
 def add_metadata_source_relation(cluster_mo, **args):
@@ -70,6 +72,37 @@ def add_source_relation_to_vmm_domain_profile(cluster_mo, **args):
     valid_keys = ['vmm_provider', 'vmm_domain']
     kwargs = {k: v for k, v in args.items() if (k in valid_keys and v)}
     return RsALDevToDomP(cluster_mo, tDn='uni/vmmp-{vmm_provider}/dom-{vmm_domain}')
+
+def add_l4l7_device_folders(parent_mo, folder_list):
+    for folder in folder_list:
+        add_l4l7_device_folder(parent_mo, **folder)
+
+def add_l4l7_device_folder(parent_mo, **args):
+    """Recursively add device folders and parameters to parent mo.
+
+    @param parent_mo: The parent MO of the top level folder is the CDev, but the parent MO of a subfolder is its parent folder.
+    """
+    args = args['optional_args'] if 'optional_args' in args.keys() else args
+    folder_required_keys = ['name', 'key']
+    param_required_keys = ['name', 'key', 'value']
+
+    # parse folders
+    if all(k in args.keys() for k in folder_required_keys):
+        vns_devfolder = DevFolder(parent_mo, **{k: v for k,v in args.items() if k in folder_required_keys and v})
+
+        # parse params
+        if 'device_params' in args.keys(): # This folder contains device params
+            for param in args['device_params']:
+                if all(k in param.keys() for k in param_required_keys):
+                    DevParam(vns_devfolder, **param)
+
+        # parse subfolders
+        if 'device_folders' in args.keys():
+            for folder in args['device_folders']:
+                add_dev_folders_params(vns_devfolder, **folder)
+        return vns_devfolder
+    else:
+        raise Exception('Invalid L4-L7 device folder configuration. Missing required keys "{0}": {1}'.format(folder_required_keys, repr(args)))
 
 class CreateL4L7Cluster(CreateMo):
     def __init__(self):
