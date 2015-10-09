@@ -241,32 +241,31 @@ applied_contracts:
 #   cluster_ip: <clusterIP>
 #   cluster_port: <clusterPort>
 #   device_package: <vendor>-<model>-<version>
-#   vmm_provider: VMware                    # for virtual devices
-#   vmm_domain: my_firepower_domain         # for virtual devices
+#   vmm_provider: VMware                    # For virtual devices.
+#   vmm_domain: my_firepower_domain         # For virtual devices.
 #   
 #   devices:
 #   - name: <concreteDeviceName>
-#     vmName: <vmName>                      # for virtual devices
-#     vcenterName: <vcenterName>            # for virtual devices
-#     vmm_provider: <vmmProvider>           # for virtual devices
-#     vmm_domain: <vmmDomain>               # for virtual devices
-#     vmm_controller: <vmmController        # for virtual devices
+#     vmName: <vmName>                      # For virtual devices.
+#     vcenterName: <vcenterName>            # For virtual devices.
+#     vmm_controller: <vmmController        # For virtual devices.
 #     device_username: <deviceUsername>
 #     device_ip: <deviceIP>
 #     device_port: <devicePort>
 #
 #     concrete_interfaces:
 #     - name: <concreteInterfaceName>
-#       vnicName: <vnicName>                # for virtual devices
-#       path: <path>                        # path to the physical port/PC/vPC
+#       vnicName: <vnicName>                # For virtual devices.
+#       path: <path>                        # For physical devices. Path to the physical port/PC/vPC.
 #   
 #   logical_interfaces:
 #   - name: <logicalInterfaceName>
-#     label: <metaInterfaceLabel>           # Varies between device packages. See the device package device specification file for valid labels.
-#     device: <concreteDeviceName>
-#     concrete_interface: <concreteInterfaceName>
+#     label: <metaInterfaceLabel>           # Mandatory. Varies between device packages. See the device package device specification file for valid labels.
+#     device: <concreteDeviceName>          # Mandatory.
+#     concrete_interface: <concreteInterfaceName> # Mandatory.
 #
-# All args other than "name" are optional unless required by APIC.
+# All sections are optional. All parameters other than "name" are optional, with the exception of keys in the "logical_interfaces" section.
+# 
 
 l4l7_devices:
 - name: my_cluster
@@ -283,10 +282,8 @@ l4l7_devices:
 
   devices:
   - name: my_device
-    #vmName: Virtual3D64_a
+    #vmName: Virtual3D64
     #vcenterName: my_vCenter
-    #vmm_provider: VMware
-    #vmm_domain: my_vmm_domain
     #vmm_controller: my_vCenter
     device_username: admin
     device_password: device_password_1
@@ -294,16 +291,14 @@ l4l7_devices:
     device_port: 443
     concrete_interfaces:
     - name: internalcinf
-      vnicName: ""
+      #vnicName: Network adapter 2
       path: "topology/pod-1/paths-1001/pathep-[eth1/11]"
     - name: externalcinf
-      vnicName: ""
+      #vnicName: Network adapter 3
       path: "topology/pod-1/paths-1001/pathep-[eth1/12]"
   - name: my_device_2
-    #vmName: Virtual3D64_b
+    #vmName: Virtual3D64
     #vcenterName: my_vCenter
-    #vmm_provider: VMware
-    #vmm_domain: my_vmm_domain
     #vmm_controller: my_vCenter
     device_username: admin
     device_password: device_password_2
@@ -311,10 +306,10 @@ l4l7_devices:
     device_port: 443
     concrete_interfaces:
     - name: internalcinf
-      vnicName: ""
+      #vnicName: Network adapter 4
       path: "topology/pod-1/paths-1001/pathep-[eth1/11]"
     - name: externalcinf
-      vnicName: ""
+      #vnicName: Network adapter 5
       path: "topology/pod-1/paths-1001/pathep-[eth1/12]"
 
   logical_interfaces:
