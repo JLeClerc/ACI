@@ -1,5 +1,5 @@
 
-from cobra.model.vns import LDevVip, RsMDevAtt, CCred, CCredSecret, CMgmt
+from cobra.model.vns import LDevVip, RsMDevAtt, CCred, CCredSecret, CMgmt, RsALDevToDomP
 from createMo import *
 import getpass
 import sys
@@ -34,6 +34,8 @@ def create_l4l7_cluster(fv_tenant, name, **args):
         vns_ccredsecret = add_concrete_device_access_credentials_secret(vns_ldevvip, optional_args=args)
     if 'cluster_ip' in args or 'cluster_port' in args:
         vns_cmgmt = add_management_interface(vns_ldevvip, optional_args=args)
+    if 'vmm_provider' in args and 'vmm_domain' in args:
+        vns_rsaldevtodomp = add_source_relation_to_vmm_domain_profile(vns_ldevvip, optional_args=args)
     return vns_ldevvip
 
 def add_metadata_source_relation(cluster_mo, **args):
@@ -63,10 +65,11 @@ def add_management_interface(cluster_mo, **args):
     kwargs = {key_map[k]: v for k, v in kwargs.items()}
     return CMgmt(cluster_mo, name='devMgmt', **kwargs)
 
-def add_concrete_device(cluster_mo, **args):
-    """ Calls L4L7Device.py to create CDev child MO's """
-    return createL4L7Device.create_l4l7_device(cluster_mo, **args)
-
+def add_source_relation_to_vmm_domain_profile(cluster_mo, **args):
+    """A source relation to the VMM domain profile."""
+    valid_keys = ['vmm_provider', 'vmm_domain']
+    kwargs = {k: v for k, v in args.items() if (k in valid_keys and v)}
+    return RsALDevToDomP(cluster_mo, tDn='uni/vmmp-{vmm_provider}/dom-{vmm_domain}')
 
 class CreateL4L7Cluster(CreateMo):
     def __init__(self):
