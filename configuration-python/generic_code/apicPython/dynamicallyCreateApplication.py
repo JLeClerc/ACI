@@ -111,7 +111,7 @@ class DynamicallyCreateApplication(LabScript):
             if is_valid_key(cluster, 'devices'):
                 for device in cluster['devices']:
                     if 'vmm provider' in cluster and 'vmm_domain' in cluster:
-                        vns_cdev = createL4L7Device.create_l4l7_device(vns_ldevvip, vmm_provider=cluster['vmm_provider'], vmm_domain=cluster['vmm_domain'] **device)
+                        vns_cdev = createL4L7Device.create_l4l7_device(vns_ldevvip, vmm_provider=cluster['vmm_provider'], vmm_domain=cluster['vmm_domain'], **device)
                     else:
                         vns_cdev = createL4L7Device.create_l4l7_device(vns_ldevvip, **device)
                     self.commit_change(changed_object=vns_cdev)
@@ -125,7 +125,7 @@ class DynamicallyCreateApplication(LabScript):
             # add logical interfaces to cluster
             if is_valid_key(cluster, 'logical_interfaces'):
                 for logical_interface in cluster['logical_interfaces']:
-                    vns_lif = createL4L7LogicalInterface.create_l4l7_logical_interface(vns_ldevvip, logical_interface['name'], device=logical_interface['device'], label=logical_interface['label'], tenant=self.tenant, cluster=cluster['name'], cifname=logical_interface['concrete_interface']) 
+                    vns_lif = createL4L7LogicalInterface.create_l4l7_logical_interface(vns_ldevvip, logical_interface['name'], device=logical_interface['device'], label=logical_interface['label'], tenant=self.tenant, cluster=cluster['name'], cifname=logical_interface['concrete_interface'], device_package=cluster['device_package']) 
                     self.commit_change(changed_object=vns_lif)
 
 if __name__ == '__main__':
