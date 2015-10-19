@@ -51,7 +51,8 @@ def add_source_relation_to_vmm_domain_controller_profile(device_mo, **args):
     """Source relation to the vmm domain controller profile for validation."""
     args = args['optional_args'] if 'optional_args' in args.keys() else args
     valid_keys = ['vmm_provider','vmm_domain','vmm_controller']
-    return RsCDevToCtrlrP(device_mo, tDn='uni/vmmp-{vmm_provider}/dom-{vmm_domain}/ctrlr-{vmm_controller}')
+    kwargs = {k: v for k, v in args.items() if (k in valid_keys and v)}
+    return RsCDevToCtrlrP(device_mo, tDn='uni/vmmp-{vmm_provider}/dom-{vmm_domain}/ctrlr-{vmm_controller}'.format(**kwargs))
 
 def add_l4l7_device_folders(parent_mo, folder_list):
     for folder in folder_list:
@@ -80,7 +81,6 @@ def add_l4l7_device_folder(parent_mo, **args):
         if 'device_folders' in args.keys():
             for folder in args['device_folders']:
                 add_dev_folders_params(vns_devfolder, **folder)
-        return vns_devfolder
     else:
         raise Exception('Invalid L4-L7 device folder configuration. Missing required keys "{0}": {1}'.format(folder_required_keys, repr(args)))
 
