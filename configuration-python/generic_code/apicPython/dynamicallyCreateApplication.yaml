@@ -250,6 +250,7 @@ applied_contracts:
 #     - name: <name>
 #       key: <key>
 #       value: <value>
+#   physical_domain: phys                   # For physical devices.
 #   vmm_provider: VMware                    # For virtual devices.
 #   vmm_domain: my_firepower_domain         # For virtual devices.
 #   
@@ -296,6 +297,7 @@ l4l7_devices:
     - name: ac_policy
       key: ac_policy
       value: Default Access Control
+  physical_domain: phys
   #vmm_provider: VMware
   #vmm_domain: my_firepower_domain
   devices:
