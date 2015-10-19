@@ -1,5 +1,5 @@
 
-from cobra.model.vns import LDevVip, RsMDevAtt, CCred, CCredSecret, CMgmt, RsALDevToDomP, DevFolder, DevParam
+from cobra.model.vns import LDevVip, RsMDevAtt, CCred, CCredSecret, CMgmt, RsALDevToDomP, RsALDevToPhysDomP, DevFolder, DevParam
 from createMo import *
 import getpass
 import sys
@@ -36,6 +36,8 @@ def create_l4l7_cluster(fv_tenant, name, **args):
         vns_cmgmt = add_management_interface(vns_ldevvip, optional_args=args)
     if 'vmm_provider' in args and 'vmm_domain' in args:
         vns_rsaldevtodomp = add_source_relation_to_vmm_domain_profile(vns_ldevvip, optional_args=args)
+    if 'physical_domain' in args:
+        vns_rsaldevtophysdomp = add_source_relation_to_physical_domain_profile(vns_ldevvip, optional_args=args)
     if 'device_folders' in args:
         add_l4l7_device_folders(vns_ldevvip, args['device_folders'])
     return vns_ldevvip
@@ -69,9 +71,17 @@ def add_management_interface(cluster_mo, **args):
 
 def add_source_relation_to_vmm_domain_profile(cluster_mo, **args):
     """A source relation to the VMM domain profile."""
+    args = args['optional_args'] if 'optional_args' in args.keys() else args
     valid_keys = ['vmm_provider', 'vmm_domain']
     kwargs = {k: v for k, v in args.items() if (k in valid_keys and v)}
-    return RsALDevToDomP(cluster_mo, tDn='uni/vmmp-{vmm_provider}/dom-{vmm_domain}')
+    return RsALDevToDomP(cluster_mo, tDn='uni/vmmp-{vmm_provider}/dom-{vmm_domain}'.format(**kwargs))
+
+def add_source_relation_to_physical_domain_profile(cluster_mo, **args):
+    """A source relation to a physical domain profile."""
+    args = args['optional_args'] if 'optional_args' in args.keys() else args
+    valid_keys = ['physical_domain']
+    kwargs = {k: v for k, v in args.items() if (k in valid_keys and v)}
+    return RsALDevToPhysDomP(cluster_mo, tDn='uni/phys-{physical_domain}'.format(**kwargs))
 
 def add_l4l7_device_folders(parent_mo, folder_list):
     for folder in folder_list:
@@ -99,8 +109,7 @@ def add_l4l7_device_folder(parent_mo, **args):
         # parse subfolders
         if 'device_folders' in args.keys():
             for folder in args['device_folders']:
-                add_dev_folders_params(vns_devfolder, **folder)
-        return vns_devfolder
+                add_l4l7_device_folder(vns_devfolder, **folder)
     else:
         raise Exception('Invalid L4-L7 device folder configuration. Missing required keys "{0}": {1}'.format(folder_required_keys, repr(args)))
 
