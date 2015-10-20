@@ -34,16 +34,16 @@ class DynamicallyCreateApplication(LabScript):
 
     def run_yaml_mode(self):
         super(DynamicallyCreateApplication, self).run_yaml_mode()
-        self.security_domains = self.args['security_domains']
-        self.private_network = self.args['private_network']
-        self.bridge_domains = self.args['bridge_domains']
-        self.filters = self.args['filters']
-        self.contracts = self.args['contracts']
-        self.application = self.args['application']['name']
-        self.application_optional_args = self.args['application']['optional_args']
-        self.epgs = self.args['epgs']
-        self.applied_contracts = self.args['applied_contracts']
-        self.l4l7_devices = self.args['l4l7_devices']
+        self.security_domains = self.args.get('security_domains', [])
+        self.private_network = self.args.get('private_network', [])
+        self.bridge_domains = self.args.get('bridge_domains', [])
+        self.filters = self.args.get('filters', [])
+        self.contracts = self.args.get('contracts', [])
+        self.application = self.args.get('application', {}).get('name', '')
+        self.application_optional_args = self.args.get('application', {}).get('optional_args', [])
+        self.epgs = self.args.get('epgs', [])
+        self.applied_contracts = self.args.get('applied_contracts', [])
+        self.l4l7_devices = self.args.get('l4l7_devices', [])
 
     def run_wizard_mode(self):
         print 'Wizard mode is not supported in this method. Please try Yaml mode.'
@@ -62,7 +62,8 @@ class DynamicallyCreateApplication(LabScript):
             addSecurityDomain.add_security_domain(fv_tenant, security_domain)
 
         # create private network
-        createPrivateNetwork.create_private_network(fv_tenant, self.private_network)
+        if self.private_network:
+            createPrivateNetwork.create_private_network(fv_tenant, self.private_network)
 
         # create bridge domains
         for bridge_domain in self.bridge_domains:
@@ -87,7 +88,8 @@ class DynamicallyCreateApplication(LabScript):
                             createContract.add_filter_to_subject(vz_subj, filter)
 
         # create application
-        fv_ap = createApplication.create_application(fv_tenant, self.application, optional_args=self.application_optional_args)
+        if self.application:
+            fv_ap = createApplication.create_application(fv_tenant, self.application, optional_args=self.application_optional_args)
 
         # create EPGs
         for epg in self.epgs:
