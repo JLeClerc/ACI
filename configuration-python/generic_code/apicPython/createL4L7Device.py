@@ -80,7 +80,7 @@ def add_l4l7_device_folder(parent_mo, **args):
         # parse subfolders
         if 'device_folders' in args.keys():
             for folder in args['device_folders']:
-                add_dev_folders_params(vns_devfolder, **folder)
+                add_l4l7_device_folder(vns_devfolder, **folder)
     else:
         raise Exception('Invalid L4-L7 device folder configuration. Missing required keys "{0}": {1}'.format(folder_required_keys, repr(args)))
 
